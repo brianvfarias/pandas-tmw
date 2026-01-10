@@ -68,7 +68,6 @@ clientes
 # Crie uma coluna 'dias_conta' com o resultado.
 # """)
 
-from datetime import datetime
 
 clientes['dias_conta'] = (datetime.today() - pd.to_datetime(clientes['DtCriacao'])).dt.days
 clientes
@@ -89,35 +88,68 @@ com um percentual de 15% e bônus de 250 pontos.
 Crie uma coluna 'pontos_simulados' com o resultado.
 """)
 
+def increment_points(x, **kwargs):
+  kwargs_keys = kwargs.keys()
+  percentage = kwargs['percentage'] if 'percentage' in kwargs_keys else 0.1
+  fixed_bonus = kwargs['fixed_bonus'] if 'fixed_bonus' in kwargs_keys else 100
+
+  increment = (x * percentage) + fixed_bonus
+  return x + increment 
+
+clientes['pontos_simulados'] = clientes['qtdePontos'].apply(increment_points, percentage=0.25, fixed_bonus=250)
+clientes
+
 #%%
 # ============================================================================
 # DESAFIO 4: Lógica complexa com múltiplas colunas (axis=1)
 # ============================================================================
-print("\n[DESAFIO 4] Apply com múltiplas colunas (axis=1)")
-print("-" * 60)
-print("""
-Use apply com axis=1 para processar linhas inteiras. Para cada cliente, 
-avalie seu status baseado em:
+# print("\n[DESAFIO 4] Apply com múltiplas colunas (axis=1)")
+# print("-" * 60)
+# print("""
+# Use apply com axis=1 para processar linhas inteiras. Para cada cliente, 
+# avalie seu status baseado em:
 
-1. Quanto de pontos ele tem (use a classificação do Desafio 1)
-2. Quantas plataformas ele está conectado (flEmail, flTwitch, flYouTube, 
-   flBlueSky, flInstagram)
+# 1. Quanto de pontos ele tem (use a classificação do Desafio 1)
+# 2. Quantas plataformas ele está conectado (flEmail, flTwitch, flYouTube, 
+#    flBlueSky, flInstagram)
 
-Retorne um status descritivo:
-- Se for Platina ou Ouro E tiver 2+ plataformas: "VIP - Engajado"
-- Se for Ouro ou Platina: "Cliente Valioso"
-- Se for Prata: "Cliente Regular"
-- Caso contrário: "Cliente Novo"
+# Retorne um status descritivo:
+# - Se for Platina ou Ouro E tiver 2+ plataformas: "VIP - Engajado"
+# - Se for Ouro ou Platina: "Cliente Valioso"
+# - Se for Prata: "Cliente Regular"
+# - Caso contrário: "Cliente Novo"
 
-Crie uma coluna 'status' com o resultado.
-""")
+# Crie uma coluna 'status' com o resultado.
+# """)
 
-# Seu código aqui
+def set_status(client_row):
+  social_medias = ('flEmail', 'flTwitch', 'flYouTube', 'flBlueSky', 'flInstagram')
+  social_medias_count = 0
+  for i in social_medias:
+    social_medias_count = social_medias_count + client_row[i]
+    if social_medias_count >= 2:
+      break
+  
+  if client_row['categoria'] == 'Platina' and social_medias_count >= 2:
+    return 'VIP - Engajado'
+  if client_row['categoria'] in ['Platina', 'Ouro']:
+    return 'Cliente Valioso'
+  if client_row['categoria'] == 'Prata':
+    return 'Cliente Regular'
+  return 'Cliente Novo'
+  
+clientes['status'] = clientes.apply(set_status, axis=1)
+clientes
+#%%
+summary = clientes.groupby(by=['status'], as_index=False).agg({
+  'idCliente': ['count'],
+})
+print(summary)
+summary.columns = ['Status', 'Contagem de Clientes']
+summary
 
 
-
-
-
+#%%
 # ============================================================================
 # DESAFIO 5: Apply com função lambda (forma condensada)
 # ============================================================================
